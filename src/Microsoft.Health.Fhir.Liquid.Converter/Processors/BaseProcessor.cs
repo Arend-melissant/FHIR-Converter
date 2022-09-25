@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
 using DotLiquid;
-using EnsureThat;
 using Microsoft.Health.Fhir.Liquid.Converter.Exceptions;
 using Microsoft.Health.Fhir.Liquid.Converter.Models;
 using Microsoft.Health.Fhir.Liquid.Converter.OutputProcessors;
@@ -18,12 +17,13 @@ namespace Microsoft.Health.Fhir.Liquid.Converter.Processors
 {
     public abstract class BaseProcessor : IFhirConverter
     {
-        protected BaseProcessor(ProcessorSettings processorSettings)
-        {
-            Settings = EnsureArg.IsNotNull(processorSettings, nameof(processorSettings));
-        }
+        private readonly ProcessorSettings _settings;
+        private const int _maxIterations = 100000;
 
-        public ProcessorSettings Settings { get; }
+        protected BaseProcessor(ProcessorSettings processorSettings = null)
+        {
+            _settings = processorSettings;
+        }
 
         protected virtual string DataKey { get; set; } = "msg";
 
@@ -38,13 +38,13 @@ namespace Microsoft.Health.Fhir.Liquid.Converter.Processors
         protected virtual Context CreateContext(ITemplateProvider templateProvider, IDictionary<string, object> data)
         {
             // Load data and templates
-            var timeout = Settings.TimeOut;
+            var timeout = _settings?.TimeOut ?? 0;
             var context = new Context(
                 environments: new List<Hash> { Hash.FromDictionary(data) },
                 outerScope: new Hash(),
                 registers: Hash.FromDictionary(new Dictionary<string, object> { { "file_system", templateProvider.GetTemplateFileSystem() } }),
                 errorsOutputMode: ErrorsOutputMode.Rethrow,
-                maxIterations: Settings.MaxIterations,
+                maxIterations: _maxIterations,
                 timeout: timeout,
                 formatProvider: CultureInfo.InvariantCulture);
 
@@ -54,7 +54,7 @@ namespace Microsoft.Health.Fhir.Liquid.Converter.Processors
             return context;
         }
 
-        protected virtual void CreateTraceInfo(object data, Context context, TraceInfo traceInfo)
+        protected virtual void CreateTraceInfo(object data, TraceInfo traceInfo)
         {
         }
 
@@ -80,7 +80,7 @@ namespace Microsoft.Health.Fhir.Liquid.Converter.Processors
             var context = CreateContext(templateProvider, dictionary);
             var rawResult = RenderTemplates(template, context);
             var result = PostProcessor.Process(rawResult);
-            CreateTraceInfo(data, context, traceInfo);
+            CreateTraceInfo(data, traceInfo);
 
             return result.ToString(Formatting.Indented);
         }

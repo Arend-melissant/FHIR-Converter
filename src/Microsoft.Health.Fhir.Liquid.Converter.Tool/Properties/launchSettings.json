@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Microsoft.Health.Fhir.Liquid.Converter.Tool": {
+      "commandName": "Project",
+      "commandLineArgs": "convert -d C:\\Calidos\\HL7\\FHIR-Converter-main\\bin\\Hl7v2DefaultTemplates -r ADT_A02 -i C:\\Calidos\\HL7\\DataFolder\\HL7In -o C:\\Calidos\\HL7\\DataFolder\\HL7Out"
+    }
+  }
+}

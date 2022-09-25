@@ -28,8 +28,6 @@ namespace Microsoft.Health.Fhir.Liquid.Converter.FunctionalTests
         private static readonly string _ccdaTemplateFolder = Path.Combine(Constants.TemplateDirectory, "Ccda");
         private static readonly string _ccdaDataFolder = Path.Combine(Constants.SampleDataDirectory, "Ccda");
 
-        private static readonly ProcessorSettings _processorSettings = new ProcessorSettings();
-
         private static readonly ITemplateProvider _hl7TemplateProvider = new TemplateProvider(_hl7TemplateFolder, DataType.Hl7v2);
         private static readonly ITemplateProvider _ccdaTemplateProvider = new TemplateProvider(_ccdaTemplateFolder, DataType.Ccda);
 
@@ -452,10 +450,10 @@ namespace Microsoft.Health.Fhir.Liquid.Converter.FunctionalTests
             switch (dataType)
             {
                 case DataType.Hl7v2:
-                    return JObject.Parse(new Hl7v2Processor(_processorSettings)
+                    return JObject.Parse(new Hl7v2Processor()
                 .Convert(await File.ReadAllTextAsync(samplePath, Encoding.UTF8), templateName, _hl7TemplateProvider));
                 case DataType.Ccda:
-                    return JObject.Parse(new CcdaProcessor(_processorSettings)
+                    return JObject.Parse(new CcdaProcessor()
                 .Convert(await File.ReadAllTextAsync(samplePath, Encoding.UTF8), templateName, _ccdaTemplateProvider));
                 default:
                     return null;

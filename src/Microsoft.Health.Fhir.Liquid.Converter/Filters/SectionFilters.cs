@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using DotLiquid;
 
 namespace Microsoft.Health.Fhir.Liquid.Converter
 {
@@ -17,7 +18,7 @@ namespace Microsoft.Health.Fhir.Liquid.Converter
     {
         private static readonly Regex NormalizeSectionNameRegex = new Regex("[^A-Za-z0-9]");
 
-        public static IDictionary<string, object> GetFirstCcdaSections(IDictionary<string, object> data, string sectionNameContent)
+        public static IDictionary<string, object> GetFirstCcdaSections(Hash data, string sectionNameContent)
         {
             var sectionLists = Filters.GetCcdaSectionLists(data, sectionNameContent);
             var result = new Dictionary<string, object>();
@@ -29,7 +30,7 @@ namespace Microsoft.Health.Fhir.Liquid.Converter
             return result;
         }
 
-        public static IDictionary<string, object> GetCcdaSectionLists(IDictionary<string, object> data, string sectionNameContent)
+        public static IDictionary<string, object> GetCcdaSectionLists(Hash data, string sectionNameContent)
         {
             var result = new Dictionary<string, object>();
             var sectionNames = sectionNameContent.Split("|", StringSplitOptions.RemoveEmptyEntries);
@@ -66,7 +67,7 @@ namespace Microsoft.Health.Fhir.Liquid.Converter
             return result;
         }
 
-        public static IDictionary<string, object> GetFirstCcdaSectionsByTemplateId(IDictionary<string, object> data, string templateIdContent)
+        public static IDictionary<string, object> GetFirstCcdaSectionsByTemplateId(Hash data, string templateIdContent)
         {
             var result = new Dictionary<string, object>();
             var templateIds = templateIdContent.Split("|", StringSplitOptions.RemoveEmptyEntries);
@@ -95,12 +96,12 @@ namespace Microsoft.Health.Fhir.Liquid.Converter
             return result;
         }
 
-        private static List<object> GetComponents(IDictionary<string, object> data)
+        private static List<object> GetComponents(Hash data)
         {
-            var dataComponents = (((data["ClinicalDocument"] as Dictionary<string, object>)?
-                .GetValueOrDefault("component") as Dictionary<string, object>)?
-                .GetValueOrDefault("structuredBody") as Dictionary<string, object>)?
-                .GetValueOrDefault("component");
+            var dataComponents = (((data["ClinicalDocument"] as Hash)?
+                ["component"] as Hash)?
+                ["structuredBody"] as Hash)?
+                ["component"];
 
             if (dataComponents == null)
             {

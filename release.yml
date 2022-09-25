@@ -16,9 +16,9 @@ variables:
   publishProject: "**/*Tool/*.csproj"
   functionalTests: "**/*FunctionalTests/*.csproj"
   buildConfiguration: 'Release'
-  major: 5
-  minor: 0
-  patch: 5
+  major: 4
+  minor: 6
+  patch: 0
   buildnum: $[counter(format('{0}.{1}.{2}',variables['major'],variables['minor'], variables['patch']), 1)]
   version: $(major).$(minor).$(patch).$(buildnum)
 
@@ -135,14 +135,6 @@ stages:
         tarCompression: 'gz'
         archiveFile: '$(Build.SourcesDirectory)/data/Templates/JsonDefaultTemplates.tar.gz'
 
-    - task: ArchiveFiles@2
-      inputs:
-        rootFolderOrFile: '$(Build.SourcesDirectory)/data/Templates/Stu3ToR4'
-        includeRootFolder: false
-        archiveType: 'tar'
-        tarCompression: 'gz'
-        archiveFile: '$(Build.SourcesDirectory)/data/Templates/Stu3ToR4DefaultTemplates.tar.gz'
-
     - task: CopyFiles@2
       displayName: 'copy DefaultTemplates to artifacts'
       inputs:
@@ -257,4 +249,3 @@ stages:
           $(System.DefaultWorkingDirectory)/FhirConverterBuild/data/Templates/Hl7v2DefaultTemplates.tar.gz
           $(System.DefaultWorkingDirectory)/FhirConverterBuild/data/Templates/CcdaDefaultTemplates.tar.gz
           $(System.DefaultWorkingDirectory)/FhirConverterBuild/data/Templates/JsonDefaultTemplates.tar.gz
-          $(System.DefaultWorkingDirectory)/FhirConverterBuild/data/Templates/Stu3ToR4DefaultTemplates.tar.gz
