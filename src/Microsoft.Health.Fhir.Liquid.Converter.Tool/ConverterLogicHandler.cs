@@ -19,6 +19,7 @@ namespace Microsoft.Health.Fhir.Liquid.Converter.Tool
     {
         private const string MetadataFileName = "metadata.json";
         private static readonly List<string> CcdaExtensions = new List<string> { ".ccda", ".xml" };
+        private static readonly ProcessorSettings DefaultProcessorSettings = new ProcessorSettings();
 
         internal static void Convert(ConverterOptions options)
         {
@@ -96,22 +97,17 @@ namespace Microsoft.Health.Fhir.Liquid.Converter.Tool
         {
             return dataType switch
             {
-                DataType.Hl7v2 => new Hl7v2Processor(),
-                DataType.Ccda => new CcdaProcessor(),
-                DataType.Json => new JsonProcessor(),
+                DataType.Hl7v2 => new Hl7v2Processor(DefaultProcessorSettings),
+                DataType.Ccda => new CcdaProcessor(DefaultProcessorSettings),
+                DataType.Json => new JsonProcessor(DefaultProcessorSettings),
+                DataType.Fhir => new FhirProcessor(DefaultProcessorSettings),
                 _ => throw new NotImplementedException($"The conversion from data type {dataType} to FHIR is not supported")
             };
         }
 
         private static ITemplateProvider CreateTemplateProvider(DataType dataType, string templateDirectory)
         {
-            return dataType switch
-            {
-                DataType.Hl7v2 => new TemplateProvider(templateDirectory, DataType.Hl7v2),
-                DataType.Ccda => new TemplateProvider(templateDirectory, DataType.Ccda),
-                DataType.Json => new TemplateProvider(templateDirectory, DataType.Json),
-                _ => throw new NotImplementedException($"The conversion from data type {dataType} to FHIR is not supported")
-            };
+            return new TemplateProvider(templateDirectory, dataType);
         }
 
         private static TraceInfo CreateTraceInfo(DataType dataType, bool isTraceInfo)
@@ -127,6 +123,7 @@ namespace Microsoft.Health.Fhir.Liquid.Converter.Tool
                 DataType.Ccda => Directory.EnumerateFiles(inputDataFolder, "*.*", SearchOption.AllDirectories)
                     .Where(x => CcdaExtensions.Contains(Path.GetExtension(x).ToLower())).ToList(),
                 DataType.Json => Directory.EnumerateFiles(inputDataFolder, "*.json", SearchOption.AllDirectories).ToList(),
+                DataType.Fhir => Directory.EnumerateFiles(inputDataFolder, "*.json", SearchOption.AllDirectories).ToList(),
                 _ => new List<string>(),
             };
         }
