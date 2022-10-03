@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 
-namespace HL7ListenerApplication
+namespace Microsoft.Health.HL7.Receiver
 {
     
     // this provides basic access to a HL7 message. It is stored as string array of segments, no awarness of the message schema.

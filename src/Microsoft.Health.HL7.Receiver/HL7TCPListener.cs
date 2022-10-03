@@ -2,7 +2,7 @@
 // 03/06/2015 - Initial version
 // 01/09/2016 - Changed behaviour to always send ACKS (unless -NoACK is set). No longer honouring the ACK mode from MSH-15, this caused issues for senders epecting ACKS but not setting MSH-15.
 
-namespace HL7ListenerApplication
+namespace Microsoft.Health.HL7.Receiver
 {
     using System;
     using System.Collections.Generic;
@@ -19,7 +19,7 @@ namespace HL7ListenerApplication
 
     class HL7TCPListener
     {
-        const int TCP_TIMEOUT = 300000; // timeout value for receiving TCP data in millseconds
+        const int TCP_TIMEOUT = 60 * 60 * 1000; // timeout value for receiving TCP data in millseconds
         private TcpListener tcpListener;
         private Thread tcpListenerThread;
         private Thread passthruThread;
@@ -36,6 +36,10 @@ namespace HL7ListenerApplication
         private bool runThread = true;
 		private Encoding encoder = Encoding.Default;
 
+        private bool _convertToFhir = true;
+        private bool _sendToServer = true;
+        private string _fhirServer = "";
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -47,10 +51,13 @@ namespace HL7ListenerApplication
 		/// <summary>
         /// Constructor
         /// </summary>
-        public HL7TCPListener(int port, Encoding encoding)
+        public HL7TCPListener(int port, Encoding encoding, bool convertToFhir, bool sendToServer, string fhirServer)
         {
             this.listernerPort = port;
-			this.encoder = encoding;          
+			this.encoder = encoding;    
+            _convertToFhir = convertToFhir;
+            _sendToServer = sendToServer;
+            _fhirServer = fhirServer;   
         }
 
         /// <summary>
@@ -147,9 +154,6 @@ namespace HL7ListenerApplication
         /// <param name="client"></param>
         private void ReceiveData(object client)
         {
-            bool convertToFhir = true;
-            bool sendToServer = false;
-
             // generate a random sequence number to use for the file names
             Random random = new Random(Guid.NewGuid().GetHashCode()); 
             int filenameSequenceStart = random.Next(0, 1000000); 
@@ -211,7 +215,7 @@ namespace HL7ListenerApplication
                             string dateStamp = DateTime.Now.Year.ToString() + DateTime.Now.Month.ToString().PadLeft(2,'0') + DateTime.Now.Day.ToString().PadLeft(2, '0') + DateTime.Now.Hour.ToString().PadLeft(2, '0') + DateTime.Now.Minute.ToString().PadLeft(2, '0');
                             string filename = dateStamp + "_" + (filenameSequenceStart + messageCount).ToString("D6") + "_" + messageTrigger ; //  increment sequence number for each filename
                                                                                                                                                        // Write the HL7 message to file.
-                            if (convertToFhir)
+                            if (_convertToFhir)
                             {
                                 var bundleJson = Hl7TemplateConverter.convert(message.ToString(), "C:\\Calidos\\HL7\\FHIR-Converter\\bin\\Hl7v2DefaultTemplates");
 
@@ -219,9 +223,9 @@ namespace HL7ListenerApplication
                                 {
                                     WriteMessagetoFile(message.ToString(), this.archivePath + filename + ".hl7");
                                     WriteMessagetoFile(bundleJson, this.archivePath + filename + ".json");
-                                    if (sendToServer)
+                                    if (_sendToServer)
                                     {
-                                        FihrBundle.Upload("https://localhost:44348/", bundleJson);
+                                        FihrBundle.Upload(_fhirServer, bundleJson);
                                     }
                                 }
                             }
