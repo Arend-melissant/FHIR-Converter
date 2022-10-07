@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Microsoft.Health.HL7.Receiver": {
-      "commandName": "Project",
-      "commandLineArgs": "-Port 7000"
+      "commandName": "Project"
     }
   }
 }

@@ -25,7 +25,6 @@ namespace Microsoft.Health.HL7.Receiver
         private Thread passthruThread;
         private Thread passthruAckThread;
         private int listernerPort;
-        private string archivePath = null;
         private bool sendACK = true;
         private string passthruHost = null;
         private int passthruPort;
@@ -36,9 +35,7 @@ namespace Microsoft.Health.HL7.Receiver
         private bool runThread = true;
 		private Encoding encoder = Encoding.Default;
 
-        private bool _convertToFhir = true;
-        private bool _sendToServer = true;
-        private string _fhirServer = "";
+        private Settings _settings;
 
         /// <summary>
         /// Constructor
@@ -51,13 +48,15 @@ namespace Microsoft.Health.HL7.Receiver
 		/// <summary>
         /// Constructor
         /// </summary>
-        public HL7TCPListener(int port, Encoding encoding, bool convertToFhir, bool sendToServer, string fhirServer)
+        public HL7TCPListener(Settings settings, Encoding encoding)
         {
-            this.listernerPort = port;
+            this.listernerPort = settings.Port;
 			this.encoder = encoding;    
-            _convertToFhir = convertToFhir;
-            _sendToServer = sendToServer;
-            _fhirServer = fhirServer;   
+            _settings = settings;
+            if (!string.IsNullOrEmpty(settings.OutputPath) && !Directory.Exists(settings.OutputPath))
+            {
+                Directory.CreateDirectory(settings.OutputPath);
+            }
         }
 
         /// <summary>
@@ -72,9 +71,9 @@ namespace Microsoft.Health.HL7.Receiver
             this.LogInformation("# Starting HL7 listener on port " + this.listernerPort);
 			this.LogInformation($"# Message encoding: {this.encoder.EncodingName}");
             // log information to the console about the options provided by the user
-            if (this.archivePath != null)
+            if (!string.IsNullOrEmpty(_settings.OutputPath))
             {
-                this.LogInformation("# Archiving received messages to: " + this.archivePath);
+                this.LogInformation("# Archiving received messages to: " + _settings.OutputPath);
             }
             if (!sendACK)
             {
@@ -215,23 +214,31 @@ namespace Microsoft.Health.HL7.Receiver
                             string dateStamp = DateTime.Now.Year.ToString() + DateTime.Now.Month.ToString().PadLeft(2,'0') + DateTime.Now.Day.ToString().PadLeft(2, '0') + DateTime.Now.Hour.ToString().PadLeft(2, '0') + DateTime.Now.Minute.ToString().PadLeft(2, '0');
                             string filename = dateStamp + "_" + (filenameSequenceStart + messageCount).ToString("D6") + "_" + messageTrigger ; //  increment sequence number for each filename
                                                                                                                                                        // Write the HL7 message to file.
-                            if (_convertToFhir)
+                            if (_settings.ConvertToFhir)
                             {
-                                var bundleJson = Hl7TemplateConverter.convert(message.ToString(), "C:\\Calidos\\HL7\\FHIR-Converter\\bin\\Hl7v2DefaultTemplates");
+                                var bundleJson = Hl7TemplateConverter.convert(message.ToString(), _settings.TemplatePath);
 
                                 if (!string.IsNullOrWhiteSpace(bundleJson))
                                 {
-                                    WriteMessagetoFile(message.ToString(), this.archivePath + filename + ".hl7");
-                                    WriteMessagetoFile(bundleJson, this.archivePath + filename + ".json");
-                                    if (_sendToServer)
+                                    if (!string.IsNullOrEmpty(_settings.OutputPath))
                                     {
-                                        FihrBundle.Upload(_fhirServer, bundleJson);
+                                        WriteMessagetoFile(message.ToString(), Path.Combine(_settings.OutputPath, filename + ".hl7"));
+                                        var patReference = BundleLogger.LogEncounters(bundleJson);
+                                        if (_settings.SendToServer)
+                                        {
+                                            BundleLogger.LogCurrentAsync(_settings.FhirServer, patReference);
+                                        }
+                                        WriteMessagetoFile(bundleJson, Path.Combine(_settings.OutputPath, filename + ".json"));
+                                    }
+                                    if (_settings.SendToServer)
+                                    {
+                                        FihrBundle.Upload(_settings.FhirServer, bundleJson);
                                     }
                                 }
                             }
-                            else
+                            else if(!string.IsNullOrEmpty(_settings.OutputPath))
                             {
-                                WriteMessagetoFile(message.ToString(), this.archivePath + filename + ".hl7");
+                                WriteMessagetoFile(message.ToString(), Path.Combine(_settings.OutputPath, filename + ".hl7"));
                             }
 
 
@@ -242,7 +249,7 @@ namespace Microsoft.Health.HL7.Receiver
                                 LogInformation("Sending ACK (Message Control ID: " + messageControlID + ")");
                                 // generate ACK Message and send in response to the message received
                                 string response = GenerateACK(message.ToString());  // TO DO: send ACKS if set in message header, or specified on command line
-                                LogInformation($"ACK: {response}");
+                                //LogInformation($"ACK: {response}");
                                 byte[] encodedResponse = encoder.GetBytes(response);
                                 // Send response
                                 try
@@ -338,6 +345,8 @@ namespace Microsoft.Health.HL7.Receiver
         private void WriteMessagetoFile(string message, string filename)
         {
             // write the HL7 message to file
+
+            filename = filename.Replace('^', '_');
             try
             {
                 LogInformation("Received message. Saving to file " + filename);
@@ -448,15 +457,6 @@ namespace Microsoft.Health.HL7.Receiver
             get { return this.passthruPort; }
         }
 
-
-        /// <summary>
-        /// The FilePath property contains the path to archive the received messages to
-        /// </summary>
-        public string FilePath
-        {
-            set { this.archivePath = value; }
-            get { return this.archivePath; }
-        }
 
         /// <summary>
         /// Write informational event to the console.

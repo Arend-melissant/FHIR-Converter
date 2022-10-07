@@ -13,5 +13,8 @@ namespace Microsoft.Health.HL7.Receiver
         public bool SendToServer { get; set; }
 
         public string FhirServer { get; set; }
+        public string TemplatePath { get; set; }
+        public string OutputPath { get; set; }
+        
     }
 }

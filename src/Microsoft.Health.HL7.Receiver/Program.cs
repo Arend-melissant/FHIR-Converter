@@ -29,12 +29,8 @@ namespace Microsoft.Health.HL7.Receiver
             Settings settings = config.GetRequiredSection("Receiver").Get<Settings>();
 
 
-            HL7TCPListener listener = new HL7TCPListener(settings.Port, encoding, settings.ConvertToFhir, settings.SendToServer, settings.FhirServer);
+            HL7TCPListener listener = new HL7TCPListener(settings, encoding);
             listener.SendACK = sendACK;
-            if (filePath != null)
-            {
-                listener.FilePath = filePath;
-            }
             if (passthruHost != null)
             {
                 listener.PassthruHost = passthruHost;

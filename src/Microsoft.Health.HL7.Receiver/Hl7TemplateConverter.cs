@@ -27,7 +27,7 @@ namespace Microsoft.Health.HL7.Receiver
             { "ADT^A09", "ADT_A09" },
             { "ADT^A10", "ADT_A10" },
             { "ADT^A11", "ADT_A11" },
-            { "ADT^A12", "ADT_A02" },
+            { "ADT^A12", "ADT_A12" },
             { "ADT^A13", "ADT_A13" },
             { "ADT^A14", "ADT_A14" },
             { "ADT^A15", "ADT_A15" },
