@@ -46,6 +46,12 @@ namespace Microsoft.Health.HL7.Receiver
 
         private static readonly IDataParser _parser = new Hl7v2DataParser();
 
+        /// <summary>
+        /// Get the root template based on ADT event in hl7 v2 string
+        /// Look up correct rempalte based on mapping
+        /// </summary>
+        /// <param name="hl7Data"></param>
+        /// <returns></returns>
         public static string getRootTemplate(string hl7Data)
         {
             string rootTemplate = string.Empty;
@@ -74,7 +80,7 @@ namespace Microsoft.Health.HL7.Receiver
         }
 
         //C:\Calidos\HL7\FHIR-Converter-main\bin\Hl7v2DefaultTemplates
-        public static string convert(string hl7, string templateDirectory)
+        public static string convert(string hl7, string templateDirectory, string rootTemplate)
         {
             var templateProvider = new TemplateProvider(templateDirectory, DataType.Hl7v2);
             var traceInfo = CreateTraceInfo(DataType.Hl7v2, false);
@@ -82,8 +88,6 @@ namespace Microsoft.Health.HL7.Receiver
             {                
             });
 
-
-            string rootTemplate = getRootTemplate(hl7);
 
             if (!string.IsNullOrEmpty(rootTemplate))
             {

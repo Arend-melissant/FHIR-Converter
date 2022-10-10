@@ -6,7 +6,7 @@
 
     public static class FihrBundle
     {
-        public static void Upload(string server, string bundleString)
+        public static Bundle Upload(string server, string bundleString)
         {
             FhirJsonParser fjp = new FhirJsonParser(); 
             Hl7.Fhir.Model.Bundle bundle = fjp.Parse<Hl7.Fhir.Model.Bundle>(bundleString);
@@ -20,6 +20,8 @@
             };
             var client = new FhirClient(server);//, settings);
             var result = client.Transaction(bundle);
+
+            return result;
         }
     }
 }

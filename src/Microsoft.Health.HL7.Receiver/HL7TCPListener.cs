@@ -123,7 +123,7 @@ namespace Microsoft.Health.HL7.Receiver
         /// <summary>
         /// Start listening for new connections
         /// </summary>
-        private void StartListener()
+        private async void StartListener()
         {
             try
             {
@@ -135,8 +135,12 @@ namespace Microsoft.Health.HL7.Receiver
                     TcpClient client = this.tcpListener.AcceptTcpClient();
                     this.LogInformation("New client connection accepted from " + client.Client.RemoteEndPoint);
                     // create a new thread. This will handle communication with a client once connected
-                    Thread clientThread = new Thread(new ParameterizedThreadStart(ReceiveData));
-                    clientThread.Start(client);
+                    //Thread clientThread = new Thread(new ParameterizedThreadStart(ReceiveData));
+                    Task t = Task.Run(() => ReceiveData(client));
+                    //clientThread.Start(client);
+                    t.Wait();
+                    
+
                 }
             }
             catch (Exception e)
@@ -151,7 +155,7 @@ namespace Microsoft.Health.HL7.Receiver
         /// Receive data from a client connection, look for MLLP HL7 message.
         /// </summary>
         /// <param name="client"></param>
-        private void ReceiveData(object client)
+        private async Task ReceiveData(object client)
         {
             // generate a random sequence number to use for the file names
             Random random = new Random(Guid.NewGuid().GetHashCode()); 
@@ -216,23 +220,39 @@ namespace Microsoft.Health.HL7.Receiver
                                                                                                                                                        // Write the HL7 message to file.
                             if (_settings.ConvertToFhir)
                             {
-                                var bundleJson = Hl7TemplateConverter.convert(message.ToString(), _settings.TemplatePath);
+                                string hl7 = message.ToString();
+                                var rootTemplate = Hl7TemplateConverter.getRootTemplate(hl7);
 
-                                if (!string.IsNullOrWhiteSpace(bundleJson))
+                                if (!string.IsNullOrEmpty(rootTemplate))
                                 {
-                                    if (!string.IsNullOrEmpty(_settings.OutputPath))
+                                    var bundleJson = Hl7TemplateConverter.convert(hl7, _settings.TemplatePath, rootTemplate);
+
+                                    if (!string.IsNullOrWhiteSpace(bundleJson))
                                     {
-                                        WriteMessagetoFile(message.ToString(), Path.Combine(_settings.OutputPath, filename + ".hl7"));
-                                        var patReference = BundleLogger.LogEncounters(bundleJson);
+                                        string patReference = string.Empty;
+                                        EncountersRepository repofromString = await EncountersRepository.CreateRepository(bundleJson);
+                                        if (!string.IsNullOrEmpty(_settings.OutputPath))
+                                        {
+                                            WriteMessagetoFile(message.ToString(), Path.Combine(_settings.OutputPath, filename + ".hl7"));
+                                            await BundleLogger.LogEncountersAsync(repofromString);
+                                            WriteMessagetoFile(bundleJson, Path.Combine(_settings.OutputPath, filename + ".json"));
+                                            patReference = repofromString.PatientReferences.FirstOrDefault();
+                                        }
                                         if (_settings.SendToServer)
                                         {
-                                            BundleLogger.LogCurrentAsync(_settings.FhirServer, patReference);
+                                            if (!string.IsNullOrEmpty(patReference))
+                                            {
+                                                EncountersRepository repofromServer = await EncountersRepository.CreateRepository(_settings.FhirServer, patReference);
+                                                var newBundle = await EncounterResolver.Resolve(repofromString, repofromServer);
+                                                bundleJson = await EncountersRepository.SerializeBundleAsync(newBundle);
+
+                                                FihrBundle.Upload(_settings.FhirServer, bundleJson);
+
+                                                repofromServer = await EncountersRepository.CreateRepository(_settings.FhirServer, patReference);
+                                                await BundleLogger.LogCurrentAsync(repofromServer);
+                                            }
+
                                         }
-                                        WriteMessagetoFile(bundleJson, Path.Combine(_settings.OutputPath, filename + ".json"));
-                                    }
-                                    if (_settings.SendToServer)
-                                    {
-                                        FihrBundle.Upload(_settings.FhirServer, bundleJson);
                                     }
                                 }
                             }
