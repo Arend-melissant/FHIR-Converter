@@ -243,7 +243,7 @@ namespace Microsoft.Health.HL7.Receiver
                                             if (!string.IsNullOrEmpty(patReference))
                                             {
                                                 EncountersRepository repofromServer = await EncountersRepository.CreateRepository(_settings.FhirServer, patReference);
-                                                var newBundle = await EncounterResolver.Resolve(repofromString, repofromServer);
+                                                var newBundle = await EncounterResolver.Resolve(repofromString, repofromServer, rootTemplate);
                                                 bundleJson = await EncountersRepository.SerializeBundleAsync(newBundle);
 
                                                 FihrBundle.Upload(_settings.FhirServer, bundleJson);
