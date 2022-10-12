@@ -23,12 +23,25 @@ namespace Microsoft.Health.HL7.Receiver
             return repo;
         }
 
-        public static async Task<EncountersRepository> CreateRepository(string fhirServer, string patientReference)
+        public static async Task<EncountersRepository> CreateRepositoryFromPatient(string fhirServer, string patientReference)
         {
             EncountersRepository repo = new EncountersRepository();
 
             HttpClient client = new HttpClient();
-            HttpResponseMessage response = await client.GetAsync($"{fhirServer}/Encounter?subject={patientReference}");
+            HttpResponseMessage response = await client.GetAsync($"{fhirServer}/Encounter?subject={patientReference}&_sort=date");
+            response.EnsureSuccessStatusCode();
+            string bundleJson = await response.Content.ReadAsStringAsync();
+
+            repo._bundle = await DeserializeBundleAsync(bundleJson);
+            return repo;
+        }
+
+        public static async Task<EncountersRepository> CreateRepositoryFromHospitalisation(string fhirServer, string hospUid)
+        {
+            EncountersRepository repo = new EncountersRepository();
+
+            HttpClient client = new HttpClient();
+            HttpResponseMessage response = await client.GetAsync($"{fhirServer}/Encounter?identifier={hospUid}&_sort=date");
             response.EnsureSuccessStatusCode();
             string bundleJson = await response.Content.ReadAsStringAsync();
 

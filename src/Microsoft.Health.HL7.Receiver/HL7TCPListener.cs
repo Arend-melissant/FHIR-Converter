@@ -230,6 +230,7 @@ namespace Microsoft.Health.HL7.Receiver
                                     if (!string.IsNullOrWhiteSpace(bundleJson))
                                     {
                                         string patReference = string.Empty;
+                                        string hospUid = string.Empty;
                                         EncountersRepository repofromString = await EncountersRepository.CreateRepository(bundleJson);
                                         if (!string.IsNullOrEmpty(_settings.OutputPath))
                                         {
@@ -237,18 +238,20 @@ namespace Microsoft.Health.HL7.Receiver
                                             await BundleLogger.LogEncountersAsync(repofromString);
                                             WriteMessagetoFile(bundleJson, Path.Combine(_settings.OutputPath, filename + ".json"));
                                             patReference = repofromString.PatientReferences.FirstOrDefault();
+                                            hospUid = repofromString.Encounters.FirstOrDefault()?.Identifier.FirstOrDefault()?.Value;
+
                                         }
                                         if (_settings.SendToServer)
                                         {
-                                            if (!string.IsNullOrEmpty(patReference))
+                                            if (!string.IsNullOrEmpty(hospUid))
                                             {
-                                                EncountersRepository repofromServer = await EncountersRepository.CreateRepository(_settings.FhirServer, patReference);
+                                                EncountersRepository repofromServer = await EncountersRepository.CreateRepositoryFromHospitalisation(_settings.FhirServer, hospUid);
                                                 var newBundle = await EncounterResolver.Resolve(repofromString, repofromServer, rootTemplate);
                                                 bundleJson = await EncountersRepository.SerializeBundleAsync(newBundle);
 
                                                 FihrBundle.Upload(_settings.FhirServer, bundleJson);
 
-                                                repofromServer = await EncountersRepository.CreateRepository(_settings.FhirServer, patReference);
+                                                repofromServer = await EncountersRepository.CreateRepositoryFromHospitalisation(_settings.FhirServer, hospUid);
                                                 await BundleLogger.LogCurrentAsync(repofromServer);
                                             }
 

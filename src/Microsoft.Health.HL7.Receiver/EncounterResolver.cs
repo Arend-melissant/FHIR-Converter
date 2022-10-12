@@ -39,6 +39,7 @@ namespace Microsoft.Health.HL7.Receiver
             }
 
             var currentEncounter = hl7repo.Encounters.FirstOrDefault();
+
             //we need at least one server encounter which is before the hl7 encounter
             //start time on both encounters needs be not null
             if (lastEncounterOnServer != null && currentEncounter != null && 
