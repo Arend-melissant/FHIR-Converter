@@ -16,6 +16,8 @@ namespace Microsoft.Health.HL7.Receiver
     using System.Collections.Concurrent;
     using Microsoft.Health.HL7.Receiver;
     using Microsoft.Health.Fhir.Client;
+    using Hl7.Fhir.Model;
+
 
     class HL7TCPListener
     {
@@ -136,7 +138,7 @@ namespace Microsoft.Health.HL7.Receiver
                     this.LogInformation("New client connection accepted from " + client.Client.RemoteEndPoint);
                     // create a new thread. This will handle communication with a client once connected
                     //Thread clientThread = new Thread(new ParameterizedThreadStart(ReceiveData));
-                    Task t = Task.Run(() => ReceiveData(client));
+                    System.Threading.Tasks.Task t = System.Threading.Tasks.Task.Run(() => ReceiveData(client));
                     //clientThread.Start(client);
                     t.Wait();
                     
@@ -155,7 +157,7 @@ namespace Microsoft.Health.HL7.Receiver
         /// Receive data from a client connection, look for MLLP HL7 message.
         /// </summary>
         /// <param name="client"></param>
-        private async Task ReceiveData(object client)
+        private async System.Threading.Tasks.Task ReceiveData(object client)
         {
             // generate a random sequence number to use for the file names
             Random random = new Random(Guid.NewGuid().GetHashCode()); 
@@ -247,6 +249,13 @@ namespace Microsoft.Health.HL7.Receiver
                                             {
                                                 EncountersRepository repofromServer = await EncountersRepository.CreateRepositoryFromHospitalisation(_settings.FhirServer, hospUid);
                                                 var newBundle = await EncounterResolver.Resolve(repofromString, repofromServer, rootTemplate);
+
+                                                var encs = newBundle.GetResources().Where(x => x.TypeName == "Encounter").Select(x => x as Encounter).OrderBy(x => x.Period.Start);
+                                                foreach (var enc in encs)
+                                                {
+                                                    LogInformation($"ENC {enc.Id}: {enc.Status}");
+                                                }
+
                                                 bundleJson = await EncountersRepository.SerializeBundleAsync(newBundle);
 
                                                 FihrBundle.Upload(_settings.FhirServer, bundleJson);

@@ -39,10 +39,10 @@ Practitioner_ID_PV1_52: A resource Id, used to fill "participant.individual.refe
             "status":"finished",
         {% endif -%}
 
-        {% if Root_Template == "ADT_A11" or Root_Template =="ADT_A27" or Root_Template =="ADT_A12" or Root_Template =="ADT_A26" -%}
+        {% if Root_Template == "ADT_A11" or Root_Template =="ADT_A12" or Root_Template == "ADT_A13" or Root_Template =="ADT_A25" or Root_Template =="ADT_A26"  or Root_Template =="ADT_A27" -%}
             "status":"cancelled",
         {% endif -%}
-        {% if Root_Template == "ADT_A13" or Root_Template =="ADT_A15" or Root_Template =="ADT_A16" or Root_Template =="ADT_A25" or Root_Template == "ADT_A01" or Root_Template == "ADT_A02" or  Root_Template == "ADT_A04" -%}
+        {% if Root_Template == "ADT_A01" or Root_Template == "ADT_A02" or  Root_Template == "ADT_A04" or Root_Template =="ADT_A15" or Root_Template =="ADT_A16" -%}
             "status":"in-progress",
         {% endif -%}
         {% if Root_Template == "ADT_A03" -%}
@@ -144,7 +144,7 @@ Practitioner_ID_PV1_52: A resource Id, used to fill "participant.individual.refe
                     "status":"completed",
                 {% endif -%}
                 {% if Root_Template == "ADT_A12" -%}
-                    "status":"cancelled",
+                    "status":"completed",
                 {% endif -%}
                 {% if Root_Template == "ADT_A14" or Root_Template == "ADT_A05"-%}
                     "status":"planned",

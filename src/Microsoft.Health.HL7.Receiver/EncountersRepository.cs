@@ -15,6 +15,7 @@ namespace Microsoft.Health.HL7.Receiver
     public class EncountersRepository
     {
         Bundle _bundle;
+        private const string _defaultInpatientFilterSortData = "status=finished,in-progress&_sort=date&class=IMP";
 
         public static async Task<EncountersRepository> CreateRepository(string bundleJson)
         {
@@ -23,12 +24,16 @@ namespace Microsoft.Health.HL7.Receiver
             return repo;
         }
 
+        //only class IMP (inpatient) for now
+        //class could also be EMER (emeregency), R (recurrent), PRENC (pre-admission)
+
+
         public static async Task<EncountersRepository> CreateRepositoryFromPatient(string fhirServer, string patientReference)
         {
             EncountersRepository repo = new EncountersRepository();
 
             HttpClient client = new HttpClient();
-            HttpResponseMessage response = await client.GetAsync($"{fhirServer}/Encounter?subject={patientReference}&_sort=date");
+            HttpResponseMessage response = await client.GetAsync($"{fhirServer}/Encounter?subject={patientReference}&{_defaultInpatientFilterSortData}"); 
             response.EnsureSuccessStatusCode();
             string bundleJson = await response.Content.ReadAsStringAsync();
 
@@ -41,7 +46,7 @@ namespace Microsoft.Health.HL7.Receiver
             EncountersRepository repo = new EncountersRepository();
 
             HttpClient client = new HttpClient();
-            HttpResponseMessage response = await client.GetAsync($"{fhirServer}/Encounter?identifier={hospUid}&_sort=date");
+            HttpResponseMessage response = await client.GetAsync($"{fhirServer}/Encounter?identifier={hospUid}&{_defaultInpatientFilterSortData}"); 
             response.EnsureSuccessStatusCode();
             string bundleJson = await response.Content.ReadAsStringAsync();
 
